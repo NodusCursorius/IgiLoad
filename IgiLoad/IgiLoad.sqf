@@ -1,23 +1,3 @@
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	IgiLoad v0.9.10_RC_e_(Arma3_1.32)																		//
-//	Version info: This is not official version of IgiLoad it is only WIP (RC)								//
-//	Author: Igi_PL																							//
-//	Web: http://www.igipl.net/																				//
-//	Version date: 2014.10.16																				//
-//																											//
-//	USE:																									//
-//	1. In mission "init.sqf" add line: "0 = execVM "IgiLoad\IgiLoadInit.sqf";".								//
-//	2. In vehicles "INITIALIZATION" field type: "0 = [this] execVM "IgiLoad\IgiLoad.sqf";"					//
-//	3. Unload from script or trigger:																		//
-//		a) Unloading cargo from script. Force unload: "0 = [Car, true, "L"] spawn IL_Do_Unload;"			//
-//		b) Unloading cargo from script. Force unload: "0 = [Car, true] spawn IL_Do_Unload;"					//
-//		c) Unloading cargo from script. Force unload: "0 = [Car] spawn IL_Do_Unload;"						//
-//	4. Loading cargo from script. Force load: "0 = [Car, [typeOf Box], "B", true, Box] spawn IL_Do_Load;"	//
-//																											//
-//	Ways from points 1 and 2 can not be used simultaneously!!!												//
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 //if true then show debug globalChat (TODO add more hints)
 IL_DevMod = false;
 
@@ -67,12 +47,15 @@ if (isnil "IL_Variables") then
 	IL_Num_Slots_MH9 = -1;
 	IL_Num_Slots_C130J = -12;
 	IL_Num_Slots_C17 = -22;
-	
+	// Lyrae completed groups
+	IL_Num_Slots_Dingo = -1;  // Dingo
+	IL_Num_Slots_HMMWV = -1;  // HWWMV
+
 	//Player addScore after loading and unloading
 	IL_Load_Score = 20;
 	//Para unload score = 2 * IL_Unload_Score
 	IL_Unload_Score = 10;
-	
+
 	//The minimum altitude for the drop with parachute
 	IL_Para_Drop_ATL = 50;
 	IL_Para_Jump_ATL = 30;
@@ -97,13 +80,13 @@ if (isnil "IL_Variables") then
 	IL_Para_Light_Veh = "Chemlight_blue";
 
 	//This allows for loading or unloading, if a player is in the area of loading or copilot
-	IL_Can_Inside = true;
-	IL_Can_CoPilot = true;
+	IL_Can_Inside = false;
+	IL_Can_CoPilot = false;
 	IL_Can_Outside = true;
 
 	//
 	//IL_SDistU = 20;//No longer needed
-	IL_SDistL = 2.5;
+	IL_SDistL = 4;   // increasing this from 2.5 to 4 to extend the radius of gathering loot
 	IL_SDistL_Heli_offset = 1;
 
 	//Load and unload (not para) max speed in km/h
@@ -112,50 +95,737 @@ if (isnil "IL_Variables") then
 	IL_LU_Alt = 3;
 	//Enable or disable usable cargo ramp in CH-49
 	IL_Ramp = true;
-	
+
 	//Enable change of vehicle mass
 	IL_Mass = true;
-	
+
 	// Supported vehicles
-	IL_Supported_Vehicles_OFFROAD = ["C_Offroad_01_F", "B_G_Offroad_01_F", "B_mas_mar_Offroad_01_F"];
-	IL_Supported_Vehicles_VAN = ["C_Van_01_box_F", "B_G_Van_01_transport_F", "C_Van_01_transport_F"];
-	IL_Supported_Vehicles_HEMTT = ["B_Truck_01_covered_F", "B_Truck_01_transport_F", "B_Truck_01_box_F", "Marinir_Truck_01_box_FG", "Marinir_Truck_01_transport_FG", "Marinir_Truck_01_covered_FG", "B_mas_mar_Truck_01_covered_F", "B_mas_mar_Truck_01_transport_F"];
-	IL_Supported_Vehicles_KAMAZ = ["I_Truck_02_transport_F", "O_Truck_02_transport_F", "I_Truck_02_covered_F", "O_Truck_02_covered_F", "caf_HLVW_open_AR", "caf_HLVW_open", "caf_HLVW_covered_ar", "caf_HLVW_covered"];
-	IL_Supported_Vehicles_TEMPEST = ["O_Truck_03_transport_F", "O_Truck_03_covered_F"];
-	IL_Supported_Vehicles_MOHAWK = ["I_Heli_Transport_02_F", "CH49_Mohawk_FG", "Marinir_CH49_Mohawk_FG"];
-	IL_Supported_Vehicles_CHINOOK = ["CH_147F", "CH_47F", "kyo_MH47E_HC", "kyo_MH47E_Ramp", "kyo_MH47E_base"];
-	IL_Supported_Vehicles_MH9 = ["B_Heli_Light_01_F", "B_mas_mar_Heli_Light_01_F"];
-	IL_Supported_Vehicles_C130J = ["C130J_Cargo", "C130J"];
-	IL_Supported_Vehicles_C17 = ["globemaster_c17_altus", "globemaster_c17_701", "globemaster_c17_703", "globemaster_c17_704", "globemaster_c17_705", "globemaster_c17_dover", "globemaster_c17_edwards", "globemaster_c17_Elmendorf", "globemaster_c17", "globemaster_c17_hickam", "globemaster_c17_IAF", "globemaster_c17_March", "globemaster_c17_mcchord", "globemaster_c17_McGuire", "globemaster_c17_Mississipi", "globemaster_c17_NATO", "globemaster_c17_natoPAPA", "globemaster_c17_Qatar", "globemaster_c17_RAAF", "globemaster_c17_ZZ172_RAF", "globemaster_c17_RCAF", "globemaster_c17_Stewart", "globemaster_c17_therock", "globemaster_c17_travis", "globemaster_c17_UAE", "globemaster_c17_wright_patt"];
+	// Dingo
+
+	IL_Supported_Vehicles_Dingo = 
+		[
+			"CUP_B_Dingo_CZ_Des",  // Dingo 2 (MG) (Desert)
+			"CUP_B_Dingo_CZ_Wdl",  // Dingo 2 (MG) (Woodland)
+			"CUP_B_Dingo_GER_Des",  // Dingo 2 (MG) (Desert)
+			"CUP_B_Dingo_GER_Wdl",  // Dingo 2 (MG) (Woodland)
+			"CUP_B_Dingo_GL_CZ_Des",  // Dingo 2 (GL) (Desert)
+			"CUP_B_Dingo_GL_CZ_Wdl",  // Dingo 2 (GL) (Woodland)
+			"CUP_B_Dingo_GL_GER_Des",  // Dingo 2 (GL) (Desert)
+			"CUP_B_Dingo_GL_GER_Wdl"  // Dingo 2 (GL) (Woodland)
+		];
+
+	// HMMWV
+	IL_Supported_Vehicles_HMMWV = 
+		[
+			"CUP_B_HMMWV_Ambulance_ACR",  // HMMWV Ambulance
+			"CUP_B_HMMWV_AGS_GPK_ACR",  // HMMWV M1114 AGS
+			"CUP_B_HMMWV_DSHKM_GPK_ACR",  // HMMWV M1114 DSHKM
+			"CUP_B_HMMWV_M2_GPK_ACR",  // HMMWV M1151 M2
+			"CUP_B_HMMWV_UNARMED_NATO_T",  // HMMWV (Unarmed)
+			"CUP_B_HMMWV_Ambulance_NATO_T",  // HMMWV Ambulance
+			"CUP_B_HMMWV_Crows_M2_NATO_T",  // HMMWV CROWS M2
+			"CUP_B_HMMWV_Crows_MK19_NATO_T",  // HMMWV CROWS MK19
+			"CUP_B_HMMWV_M2_GPK_NATO_T",  // HMMWV M115 M2
+			"CUP_B_HMMWV_M2_NATO_T",  // HMMWV M2
+			"CUP_B_HMMWV_MK19_NATO_T",  // HMMWV MK19
+			"CUP_B_HMMWV_SOV_M2_NATO_T",  // HMMWV SOV (M2)
+			"CUP_B_HMMWV_SOV_NATO_T",  // HMMWV SOV (Mk19)
+			"CUP_B_HMMWV_TOW_NATO_T",  // HMMWV TOW
+			"CUP_B_HMMWV_Transport_NATO_T",  // HMMWV Transport
+			"CUP_B_HMMWV_Terminal_NATO_T",  // HMMWV UAV Terminal
+			"CUP_B_M1151_M2_NATO_T",  // M1151 (M2)
+			"CUP_B_M1151_Deploy_NATO_T",  // M1151 (M2) Deployment
+			"CUP_B_M1151_Mk19_NATO_T",  // M1151 (Mk19)
+			"CUP_B_M1151_NATO_T",  // M1151 (Unarmed)
+			"CUP_B_M1152_NATO_T",  // M1152 EVC
+			"CUP_B_M1165_GMV_NATO_T",  // M1165 GMV (M134)
+			"CUP_B_M1167_NATO_T",  // M1167 (TOW-2)
+			"CUP_B_HMMWV_UNARMED_USA",  // HMMWV (Unarmed)
+			"CUP_B_HMMWV_Ambulance_USA",  // HMMWV Ambulance
+			"CUP_B_HMMWV_Crows_M2_USA",  // HMMWV CROWS M2
+			"CUP_B_HMMWV_Crows_MK19_USA",  // HMMWV CROWS MK19
+			"CUP_B_HMMWV_M2_GPK_USA",  // HMMWV M115 M2
+			"CUP_B_HMMWV_M2_USA",  // HMMWV M2
+			"CUP_B_HMMWV_MK19_USA",  // HMMWV MK19
+			"CUP_B_HMMWV_SOV_M2_USA",  // HMMWV SOV (M2)
+			"CUP_B_HMMWV_SOV_USA",  // HMMWV SOV (Mk19)
+			"CUP_B_HMMWV_TOW_USA",  // HMMWV TOW
+			"CUP_B_HMMWV_Transport_USA",  // HMMWV Transport
+			"CUP_B_HMMWV_Terminal_USA",  // HMMWV UAV Terminal
+			"CUP_B_M1151_M2_USA",  // M1151 (M2)
+			"CUP_B_M1151_Deploy_USA",  // M1151 (M2) Deployment
+			"CUP_B_M1151_Mk19_USA",  // M1151 (Mk19)
+			"CUP_B_M1151_USA",  // M1151 (Unarmed)
+			"CUP_B_M1152_USA",  // M1152 EVC
+			"CUP_B_M1165_GMV_USA",  // M1165 GMV (M134)
+			"CUP_B_M1167_USA",  // M1167 (TOW-2)
+			"CUP_B_HMMWV_UNARMED_USMC",  // HMMWV (Unarmed)
+			"CUP_B_HMMWV_Ambulance_USMC",  // HMMWV Ambulance
+			"CUP_B_HMMWV_M2_USMC",  // HMMWV M2
+			"CUP_B_HMMWV_M1114_USMC",  // HMMWV M240
+			"CUP_B_HMMWV_MK19_USMC",  // HMMWV MK19
+			"CUP_B_HMMWV_TOW_USMC",  // HMMWV TOW
+			"CUP_B_M1151_M2_USMC",  // M1151 (M2)
+			"CUP_B_M1151_Deploy_USMC",  // M1151 (M2) Deployment
+			"CUP_B_M1151_Mk19_USMC",  // M1151 (Mk19)
+			"CUP_B_M1151_USMC",  // M1151 (Unarmed)
+			"CUP_B_M1152_USMC",  // M1152 EVC
+			"CUP_B_M1165_GMV_USMC",  // M1165 GMV (M134)
+			"CUP_B_M1167_USMC",  // M1167 (TOW-2)
+			"Exile_Car_HMMWV_M134_Green",  // HMMWV (M134)
+			"Exile_Car_HMMWV_M134_Desert",  // HMMWV (M134)
+			"Exile_Car_HMMWV_M2_Desert",  // HMMWV (M2)
+			"Exile_Car_HMMWV_M2_Green",  // HMMWV (M2)
+			"Exile_Car_HMMWV_MEV_Desert",  // HMMWV (MEV)
+			"Exile_Car_HMMWV_MEV_Green",  // HMMWV (MEV)
+			"Exile_Car_HMMWV_UNA_Desert",  // HMMWV (Unarmed)
+			"Exile_Car_HMMWV_UNA_Green",  // HMMWV (Unarmed)
+			"HMMWV_UNA",  // HMMWV (Unarmed)
+			"HMMWV_UNA_des",  // HMMWV (Unarmed)
+			"HMMWV_M2_GPK_Base",  // HMMWV M1151 M2 Forest
+			"HMMWV_M2_GPK_1",  // HMMWV M1151 M2 Sand
+			"HMMWV_M134_des",  // HMMWV-M134
+			"HMMWV_M134",  // HMMWV-M134
+			"HMMWV_M2_des",  // HMMWV-M2
+			"HMMWV_M2",  // HMMWV-M2
+			"HMMWV_MEV_des",  // HMMWV-MEV
+			"HMMWV_MEV"  // HMMWV-MEV
+		];
+
+	IL_Supported_Vehicles_OFFROAD = 
+		[
+			"C_Offroad_01_F",
+			"B_G_Offroad_01_F",
+			"Exile_Car_Offroad_Red",
+			"Exile_Car_Offroad_Beige",
+			"Exile_Car_Offroad_White",
+			"Exile_Car_Offroad_Blue",
+			"Exile_Car_Offroad_DarkRed",
+			"Exile_Car_Offroad_BlueCustom",
+			"Exile_Car_Offroad_Guerilla01",
+			"Exile_Car_Offroad_Guerilla02",
+			"Exile_Car_Offroad_Guerilla03",
+			"Exile_Car_Offroad_Guerilla04",
+			"Exile_Car_Offroad_Guerilla05",
+			"Exile_Car_Offroad_Guerilla06",
+			"Exile_Car_Offroad_Guerilla07",
+			"Exile_Car_Offroad_Guerilla08",
+			"Exile_Car_Offroad_Guerilla09",
+			"Exile_Car_Offroad_Guerilla10",
+			"Exile_Car_Offroad_Guerilla11",
+			"Exile_Car_Offroad_Guerilla12",
+			"Exile_Car_Offroad_Rusty1",
+			"Exile_Car_Offroad_Rusty2",
+			"Exile_Car_Offroad_Rusty3",
+			"B_GEN_Offroad_01_gen_F"
+		];
+
+	IL_Supported_Vehicles_VAN = 
+		[
+			"C_Van_01_box_F",
+			"B_G_Van_01_transport_F",
+			"C_Van_01_transport_F",
+			"Exile_Car_Van_Black",
+			"Exile_Car_Van_White",
+			"Exile_Car_Van_Red",
+			"Exile_Car_Van_Guerilla01",
+			"Exile_Car_Van_Guerilla02",
+			"Exile_Car_Van_Guerilla03",
+			"Exile_Car_Van_Guerilla04",
+			"Exile_Car_Van_Guerilla05",
+			"Exile_Car_Van_Guerilla06",
+			"Exile_Car_Van_Guerilla07",
+			"Exile_Car_Van_Guerilla08",
+			"I_C_Van_01_transport_F",
+			"Exile_Car_Van_Box_Black",
+			"Exile_Car_Van_Box_White",
+			"Exile_Car_Van_Box_Red",
+			"Exile_Car_Van_Box_Guerilla01",
+			"Exile_Car_Van_Box_Guerilla02",
+			"Exile_Car_Van_Box_Guerilla03",
+			"Exile_Car_Van_Box_Guerilla04",
+			"Exile_Car_Van_Box_Guerilla05",
+			"Exile_Car_Van_Box_Guerilla06",
+			"Exile_Car_Van_Box_Guerilla07",
+			"Exile_Car_Van_Box_Guerilla08"
+		];
+
+	IL_Supported_Vehicles_HEMTT = 
+		[
+			"B_Truck_01_covered_F",
+			"B_Truck_01_transport_F",
+			"B_Truck_01_box_F",
+			"Exile_Car_HEMMT"
+		];
+
+	IL_Supported_Vehicles_KAMAZ = 
+		[
+			"I_Truck_02_transport_F",
+			"O_Truck_02_transport_F",
+			"C_Truck_02_transport_F",
+			"I_Truck_02_covered_F",
+			"O_Truck_02_covered_F",
+			"C_Truck_02_covered_F",			
+			"Exile_Car_Zamak",
+			"Exile_Car_Ural_Open_Blue",
+			"Exile_Car_Ural_Open_Yellow",
+			"Exile_Car_Ural_Open_Worker",
+			"Exile_Car_Ural_Open_Military",
+			"Exile_Car_Ural_Covered_Blue",
+			"Exile_Car_Ural_Covered_Yellow",
+			"Exile_Car_Ural_Covered_Worker",
+			"Exile_Car_Ural_Covered_Military"
+		];
+
+	IL_Supported_Vehicles_TEMPEST = 
+		[
+			"O_Truck_03_transport_F",
+			"O_Truck_03_covered_F",
+			"O_T_Truck_03_transport_ghex_F",
+			"O_T_Truck_03_covered_ghex_F",
+			"Exile_Car_Tempest"
+		];
+
+	IL_Supported_Vehicles_MOHAWK = 
+		[
+			"I_Heli_Transport_02_F",
+			"Exile_Chopper_Mohawk_FIA",
+			"O_T_VTOL_02_infantry_F",
+			"O_T_VTOL_02_vehicle_F"
+		];
+
+	IL_Supported_Vehicles_CHINOOK = 
+		[
+			"Exile_Chopper_Huron_Black",
+			"Exile_Chopper_Huron_Green"
+		];
+
+	IL_Supported_Vehicles_MH9 = 
+		[
+			"B_Heli_Light_01_F",
+			"Exile_Chopper_Hummingbird_Green"
+		];
+
+	IL_Supported_Vehicles_C130J = 
+		[
+			"B_T_VTOL_01_infantry_F",
+			"B_T_VTOL_01_vehicle_F"
+		];
+
+	IL_Supported_Vehicles_C17 = 
+		[];
 	
-	IL_Supported_Vehicles_All = IL_Supported_Vehicles_C130J + IL_Supported_Vehicles_C17 + IL_Supported_Vehicles_MH9 + IL_Supported_Vehicles_MOHAWK + IL_Supported_Vehicles_KAMAZ + IL_Supported_Vehicles_TEMPEST + IL_Supported_Vehicles_HEMTT + IL_Supported_Vehicles_VAN + IL_Supported_Vehicles_OFFROAD + IL_Supported_Vehicles_CHINOOK;
+	IL_Supported_Vehicles_All = IL_Supported_Vehicles_Dingo + IL_Supported_Vehicles_HMMWV + IL_Supported_Vehicles_C130J + IL_Supported_Vehicles_C17 + IL_Supported_Vehicles_MH9 + IL_Supported_Vehicles_MOHAWK + IL_Supported_Vehicles_KAMAZ + IL_Supported_Vehicles_TEMPEST + IL_Supported_Vehicles_HEMTT + IL_Supported_Vehicles_VAN + IL_Supported_Vehicles_OFFROAD + IL_Supported_Vehicles_CHINOOK;
 
 	// Vehicles with the ability to dropping the load on the parachute
 	IL_Para_Drop_Vehicles = IL_Supported_Vehicles_MH9 + IL_Supported_Vehicles_MOHAWK + IL_Supported_Vehicles_C130J + IL_Supported_Vehicles_C17 + IL_Supported_Vehicles_CHINOOK;
 
 	//Supported cargo
-	IL_Supported_HEMTT = ["B_Truck_01_covered_F", "B_Truck_01_transport_F", "B_Truck_01_box_F", "Marinir_Truck_01_box_FG", "Marinir_Truck_01_transport_FG", "Marinir_Truck_01_covered_FG", "B_mas_mar_Truck_01_covered_F", "B_mas_mar_Truck_01_transport_F", "B_Truck_01_mover_F", "B_Truck_01_ammo_F", "B_Truck_01_fuel_F", "B_Truck_01_medical_F", "B_Truck_01_Repair_F"];
-	IL_Supported_KAMAZ = ["I_Truck_02_transport_F", "O_Truck_02_transport_F", "I_Truck_02_covered_F", "O_Truck_02_covered_F", "caf_HLVW_open_AR", "caf_HLVW_open", "caf_HLVW_covered_ar", "caf_HLVW_covered"];
-	IL_Supported_TEMPEST = ["O_Truck_03_transport_F", "O_Truck_03_covered_F"];
-	IL_Supported_Strider = ["I_MRAP_03_F", "I_MRAP_03_gmg_F", "I_MRAP_03_hmg_F", "CAF_TAPV_ar", "caf_tapv_gl_ar", "caf_tapv_50_ar", "CAF_TAPV_tw", "caf_tapv_gl_tw", "caf_tapv_50_tw", "Night_B_MRAP_03_F", "Night_B_MRAP_03_gmg_F", "Night_B_MRAP_03_hmg_F"];
-	IL_Supported_Hunter = ["B_MRAP_01_F", "B_MRAP_01_gmg_F", "B_MRAP_01_hmg_F", "Marinir_B_MRAP_01_FG" , "Marinir_MRAP_01_gmg_FG", "Marinir_MRAP_01_hmg_FG", "B_mas_mar_MRAP_01_med_F", "B_mas_mar_MRAP_01_F", "B_mas_mar_MRAP_01_gmg_F", "B_mas_mar_MRAP_01_hmg_F"];
-	IL_Supported_Ifrit = ["O_MRAP_02_F", "O_MRAP_02_gmg_F", "O_MRAP_02_hmg_F"];
-	IL_Supported_UGV = ["B_UGV_01_rcws_F", "B_UGV_01_F", "O_UGV_01_rcws_F", "O_UGV_01_F", "I_UGV_01_rcws_F", "I_UGV_01_F"];
-	IL_Supported_VAN = ["C_Van_01_box_F", "B_G_Van_01_transport_F", "C_Van_01_transport_F"];
-	IL_Supported_OFFROAD = ["C_Offroad_01_F", "B_G_Offroad_01_F", "B_G_Offroad_01_armed_F", "JTF2_Offroad_armed_01", "B_mas_mar_Offroad_01_F", "B_mas_mar_Offroad_01_armed_F"];
-	IL_Supported_SUV = ["C_SUV_01_F"];
-	IL_Supported_Hatchback = ["C_Hatchback_01_F", "C_Hatchback_01_sport_F"];
-	IL_Supported_Hummvee = ["rc_hmmwv", "HMMWV2", "HMMWV_M1035", "M1114_AGS_ACR", "HMMWV_M1151_M2", "HMMWV2_M2", "HMMWV2_MK19", "HMMWV2_TOW", "HMMWV", "HMMWV_M2", "HMMWV_MK19", "HMMWV_TOW"];
-	IL_Supported_Quadbike = ["I_Quadbike_01_F", "C_Quadbike_01_F", "O_Quadbike_01_F", "B_G_Quadbike_01_F", "B_Quadbike_01_F", "CAF_Quadbike_OD", "CAF_Quadbike_AR", "Marinir_Quadbike_01_FG", "B_mas_mar_Quadbike_01_F"];
-	IL_Supported_Supply_Crate = ["B_supplyCrate_F", "IG_supplyCrate_F", "O_supplyCrate_F", "I_supplyCrate_F", "C_supplyCrate_F"];
-	IL_Supported_Veh_Ammo = ["Box_NATO_AmmoVeh_F", "Box_East_AmmoVeh_F", "Box_IND_AmmoVeh_F", "Land_CargoBox_V1_F", "ASC_B_box"];
-	IL_Supported_Barrel = ["Land_BarrelEmpty_F", "Land_BarrelEmpty_grey_F", "Land_BarrelSand_F", "Land_BarrelSand_grey_F", "Land_BarrelTrash_F", "Land_BarrelTrash_grey_F", "Land_BarrelWater_F", "Land_BarrelWater_grey_F", "Land_MetalBarrel_F"];//, "Land_MetalBarrel_empty_F", "MetalBarrel_burning_F"];
-	IL_Supported_Tank = ["Land_WaterBarrel_F", "Land_WaterTank_F"];
-	IL_Supported_Rubberboat = ["I_Boat_Transport_01_F", "O_Boat_Transport_01_F", "B_G_Boat_Transport_01_F", "B_Boat_Transport_01_F", "C_Rubberboat", "O_Lifeboat", "B_Lifeboat", "Marinir_duck_base_F", "B_mas_mar_Boat_Transport_01_F"];
-	IL_Supported_SDV = ["I_SDV_01_F", "O_SDV_01_F", "B_SDV_01_F", "B_mas_mar_SDV_01_F"];
-	IL_Supported_Box_H1 = ["Box_NATO_Wps_F", "Box_East_Wps_F", "Box_IND_Wps_F", "Box_East_WpsLaunch_F", "Box_NATO_WpsLaunch_F", "Box_IND_WpsLaunch_F", "Box_IND_WpsSpecial_F", "Box_East_WpsSpecial_F", "Box_NATO_WpsSpecial_F", "Box_mas_all_rifle_Wps_F", "Box_mas_us_rifle_Wps_F", "Box_mas_ru_rifle_Wps_F", "Box_mas_mar_NATO_equip_F", "Box_mas_mar_NATO_Wps_F"];
-	IL_Supported_Box_H2 = ["Box_NATO_AmmoOrd_F", "Box_East_AmmoOrd_F", "Box_IND_AmmoOrd_F", "Box_NATO_Grenades_F", "Box_East_Grenades_F", "Box_IND_Grenades_F", "Box_NATO_Ammo_F", "Box_East_Ammo_F", "Box_IND_Ammo_F", "Box_IND_Support_F", "Box_East_Support_F", "Box_NATO_Support_F"];
-	IL_Supported_Cargo20 = ["Land_Cargo20_blue_F", "Land_Cargo20_brick_red_F", "Land_Cargo20_cyan_F", "Land_Cargo20_grey_F", "Land_Cargo20_light_blue_F", "Land_Cargo20_light_green_F", "Land_Cargo20_military_green_F", "Land_Cargo20_orange_F", "Land_Cargo20_red_F", "Land_Cargo20_sand_F", "Land_Cargo20_white_F", "Land_Cargo20_yellow_F"];
+	IL_Supported_Box_H1 = 
+		[
+			"Box_East_Wps_F",  // basic weapons [CSAT]
+			"Box_East_WpsLaunch_F",  // launchers [CSAT]
+			"Box_East_WpsSpecial_F",  // special weapons [CSAT]
+
+			"Box_IND_Wps_F",  // basic weapons [AAF]
+			"Box_IND_WpsLaunch_F",  // launchers [AAF]
+			"Box_IND_WpsSpecial_F",  // special weapons [AAF]
+
+			"Box_NATO_Wps_F",  // basic weapons [NATO]
+			"Box_NATO_WpsLaunch_F",  // launchers [NATO]
+			"Box_NATO_WpsSpecial_F",  // special weapons [NATO]
+			"Exile_Container_SupplyBox"  // supply box
+		];
+
+	IL_Supported_Box_H2 = 
+		[
+			"Box_East_Ammo_F",  // basic ammo [CSAT]
+			"Box_East_AmmoOrd_F",  // explosives [CSAT] 
+			"Box_East_Grenades_F",  // grenades [CSAT]
+			"Box_East_Support_F",  // support [CSAT]
+
+			"Box_IND_Ammo_F",  // basic ammo [AAF]
+			"Box_IND_AmmoOrd_F",  // explosives [AAF]
+			"Box_IND_Grenades_F",  // grenades [AAF]
+			"Box_IND_Support_F",  // support [AAF]
+
+			"Box_NATO_Ammo_F",  // basic ammo [NATO]
+			"Box_NATO_AmmoOrd_F",  // explosives [NATO]
+			"Box_NATO_Grenades_F",  // grenades [NATO]
+			"Box_NATO_Support_F"  // support [NATO]
+		];
+
+	IL_Supported_HEMTT = 
+		[
+			"B_Truck_01_covered_F",
+			"B_Truck_01_transport_F",
+			"B_Truck_01_box_F",
+			"B_Truck_01_mover_F",
+			"B_Truck_01_ammo_F",
+			"B_Truck_01_fuel_F",
+			"B_Truck_01_medical_F",
+			"B_Truck_01_Repair_F",
+			"Exile_Car_HEMMT"
+		];
+
+	IL_Supported_KAMAZ = 
+		[
+			"I_Truck_02_transport_F",
+			"O_Truck_02_transport_F",
+			"I_Truck_02_covered_F",
+			"O_Truck_02_covered_F",
+			"Exile_Car_Zamak",
+			"C_Truck_02_transport_F",
+			"C_Truck_02_covered_F",
+			"I_Truck_02_ammo_F",
+			"O_Truck_02_Ammo_F",
+			"I_Truck_02_fuel_F",
+			"O_Truck_02_fuel_F",
+			"C_Truck_02_fuel_F",
+			"I_Truck_02_medical_F",
+			"O_Truck_02_medical_F",
+			"I_Truck_02_box_F",
+			"O_Truck_02_box_F",
+			"C_Truck_02_box_F",
+			"Exile_Car_Ural_Open_Blue",
+			"Exile_Car_Ural_Open_Yellow",
+			"Exile_Car_Ural_Open_Worker",
+			"Exile_Car_Ural_Open_Military",
+			"Exile_Car_Ural_Covered_Blue",
+			"Exile_Car_Ural_Covered_Yellow",
+			"Exile_Car_Ural_Covered_Worker",
+			"Exile_Car_Ural_Covered_Military"
+		];
+
+	IL_Supported_TEMPEST = 
+		[
+			"O_Truck_03_transport_F",
+			"O_Truck_03_covered_F",
+			"Exile_Car_Tempest",
+			"O_T_Truck_03_transport_ghex_F",
+			"O_T_Truck_03_covered_ghex_F",
+			"O_Truck_03_device_F",
+			"O_T_Truck_03_device_ghex_F",
+			"O_Truck_03_ammo_F",
+			"O_T_Truck_03_ammo_ghex_F",
+			"O_Truck_03_fuel_F",
+			"O_T_Truck_03_fuel_ghex_F",
+			"O_Truck_03_medical_F",
+			"O_T_Truck_03_medical_ghex_F",
+			"O_Truck_03_repair_F",
+			"O_T_Truck_03_repair_ghex_F"
+		];
+
+	IL_Supported_Strider = 
+		[
+			"I_MRAP_03_F",
+			"I_MRAP_03_gmg_F",
+			"I_MRAP_03_hmg_F",
+			"Exile_Car_Strider",
+			"O_LSV_02_unarmed_F",
+			"O_T_LSV_02_unarmed_F",
+			"O_LSV_02_armed_F",
+			"O_T_LSV_02_armed_F",
+			"B_CTRG_LSV_01_light_F",
+			"B_LSV_01_unarmed_F",
+			"B_T_LSV_01_unarmed_F",
+			"B_LSV_01_armed_F",
+			"B_T_LSV_01_armed_F"
+		];
+
+	IL_Supported_Hunter = 
+		[
+			"B_MRAP_01_F",
+			"B_MRAP_01_gmg_F",
+			"B_MRAP_01_hmg_F",
+			"Exile_Car_Hunter"
+		];
+
+	IL_Supported_Ifrit = 
+		[
+			"O_MRAP_02_F",
+			"O_MRAP_02_gmg_F",
+			"O_MRAP_02_hmg_F",
+			"Exile_Car_Ifrit",
+			"O_T_MRAP_02_ghex_F",
+			"O_T_MRAP_02_gmg_ghex_F",
+			"O_T_MRAP_02_hmg_ghex_F"
+		];
+
+	IL_Supported_UGV = 
+		[
+			"B_UGV_01_rcws_F",
+			"B_UGV_01_F",
+			"O_UGV_01_rcws_F",
+			"O_UGV_01_F",
+			"I_UGV_01_rcws_F",
+			"I_UGV_01_F",
+			"Exile_Car_TowTractor_White"
+		];
+
+	IL_Supported_VAN = 
+		[
+			"C_Van_01_box_F",
+			"B_G_Van_01_transport_F",
+			"C_Van_01_transport_F",
+			"Exile_Car_Van_Black",
+			"Exile_Car_Van_White",
+			"Exile_Car_Van_Red",
+			"Exile_Car_Van_Guerilla01",
+			"Exile_Car_Van_Guerilla02",
+			"Exile_Car_Van_Guerilla03",
+			"Exile_Car_Van_Guerilla04",
+			"Exile_Car_Van_Guerilla05",
+			"Exile_Car_Van_Guerilla06",
+			"Exile_Car_Van_Guerilla07",
+			"Exile_Car_Van_Guerilla08",
+			"I_C_Van_01_transport_F",
+			"Exile_Car_Van_Box_Black",
+			"Exile_Car_Van_Box_White",
+			"Exile_Car_Van_Box_Red",
+			"Exile_Car_Van_Box_Guerilla01",
+			"Exile_Car_Van_Box_Guerilla02",
+			"Exile_Car_Van_Box_Guerilla03",
+			"Exile_Car_Van_Box_Guerilla04",
+			"Exile_Car_Van_Box_Guerilla05",
+			"Exile_Car_Van_Box_Guerilla06",
+			"Exile_Car_Van_Box_Guerilla07",
+			"Exile_Car_Van_Box_Guerilla08",
+			"Exile_Car_Van_Fuel_Black",
+			"Exile_Car_Van_Fuel_White",
+			"Exile_Car_Van_Fuel_Red",
+			"Exile_Car_Van_Fuel_Guerilla01",
+			"Exile_Car_Van_Fuel_Guerilla02",
+			"Exile_Car_Van_Fuel_Guerilla03",
+			"Exile_Car_Tractor_Red",
+			"Exile_Car_OldTractor_Red"
+		];
+
+	IL_Supported_OFFROAD = 
+		[
+			"C_Offroad_01_F",
+			"B_G_Offroad_01_F",
+			"B_G_Offroad_01_armed_F",
+			"Exile_Car_Offroad_Red",
+			"Exile_Car_Offroad_Beige",
+			"Exile_Car_Offroad_White",
+			"Exile_Car_Offroad_Blue",
+			"Exile_Car_Offroad_DarkRed",
+			"Exile_Car_Offroad_BlueCustom",
+			"Exile_Car_Offroad_Guerilla01",
+			"Exile_Car_Offroad_Guerilla02",
+			"Exile_Car_Offroad_Guerilla03",
+			"Exile_Car_Offroad_Guerilla04",
+			"Exile_Car_Offroad_Guerilla05",
+			"Exile_Car_Offroad_Guerilla06",
+			"Exile_Car_Offroad_Guerilla07",
+			"Exile_Car_Offroad_Guerilla08",
+			"Exile_Car_Offroad_Guerilla09",
+			"Exile_Car_Offroad_Guerilla10",
+			"Exile_Car_Offroad_Guerilla11",
+			"Exile_Car_Offroad_Guerilla12",
+			"Exile_Car_Offroad_Rusty1",
+			"Exile_Car_Offroad_Rusty2",
+			"Exile_Car_Offroad_Rusty3",
+			"B_GEN_Offroad_01_gen_F",
+			"Exile_Car_Offroad_Armed_Guerilla01",
+			"Exile_Car_Offroad_Armed_Guerilla02",
+			"Exile_Car_Offroad_Armed_Guerilla03",
+			"Exile_Car_Offroad_Armed_Guerilla04",
+			"Exile_Car_Offroad_Armed_Guerilla05",
+			"Exile_Car_Offroad_Armed_Guerilla06",
+			"Exile_Car_Offroad_Armed_Guerilla07",
+			"Exile_Car_Offroad_Armed_Guerilla08",
+			"Exile_Car_Offroad_Armed_Guerilla09",
+			"Exile_Car_Offroad_Armed_Guerilla10",
+			"Exile_Car_Offroad_Armed_Guerilla11",
+			"Exile_Car_Offroad_Armed_Guerilla12",
+			"Exile_Car_Offroad_Repair_Civillian",
+			"Exile_Car_Offroad_Repair_Red",
+			"Exile_Car_Offroad_Repair_Beige",
+			"Exile_Car_Offroad_Repair_White",
+			"Exile_Car_Offroad_Repair_Blue",
+			"Exile_Car_Offroad_Repair_DarkRed",
+			"Exile_Car_Offroad_Repair_BlueCustom",
+			"Exile_Car_Offroad_Repair_Guerilla01",
+			"Exile_Car_Offroad_Repair_Guerilla02",
+			"Exile_Car_Offroad_Repair_Guerilla03",
+			"Exile_Car_Offroad_Repair_Guerilla04",
+			"Exile_Car_Offroad_Repair_Guerilla05",
+			"Exile_Car_Offroad_Repair_Guerilla06",
+			"Exile_Car_Offroad_Repair_Guerilla07",
+			"Exile_Car_Offroad_Repair_Guerilla08",
+			"Exile_Car_Offroad_Repair_Guerilla09",
+			"Exile_Car_Offroad_Repair_Guerilla10",
+			"Exile_Car_Offroad_Repair_Guerilla11",
+			"Exile_Car_Offroad_Repair_Guerilla12"
+		];
+
+	IL_Supported_SUV = 
+		[
+			"C_SUV_01_F",
+			"Exile_Car_SUV_Red",
+			"Exile_Car_SUV_Black",
+			"Exile_Car_SUV_Grey",
+			"Exile_Car_SUV_Orange",
+			"Exile_Car_SUV_Rusty1",
+			"Exile_Car_SUV_Rusty2",
+			"Exile_Car_SUV_Rusty3",
+			"Exile_Car_SUVXL_Black"
+		];
+
+	IL_Supported_Hatchback = 
+		[
+			"C_Hatchback_01_F",
+			"C_Hatchback_01_sport_F",
+			"Exile_Car_Octavius_White",
+			"Exile_Car_Octavius_Black",
+			"Exile_Car_Lada_Green",
+			"Exile_Car_Lada_Taxi",
+			"Exile_Car_Lada_Red",
+			"Exile_Car_Lada_White",
+			"Exile_Car_Lada_Hipster",
+			"Exile_Car_Volha_Blue",
+			"Exile_Car_Volha_White",
+			"Exile_Car_Volha_Black"
+		];
+
+	IL_Supported_Hummvee = 
+		[
+			"CUP_B_HMMWV_Ambulance_ACR",  // HMMWV Ambulance
+			"CUP_B_HMMWV_AGS_GPK_ACR",  // HMMWV M1114 AGS
+			"CUP_B_HMMWV_DSHKM_GPK_ACR",  // HMMWV M1114 DSHKM
+			"CUP_B_HMMWV_M2_GPK_ACR",  // HMMWV M1151 M2
+			"CUP_B_HMMWV_UNARMED_NATO_T",  // HMMWV (Unarmed)
+			"CUP_B_HMMWV_Ambulance_NATO_T",  // HMMWV Ambulance
+			"CUP_B_HMMWV_Crows_M2_NATO_T",  // HMMWV CROWS M2
+			"CUP_B_HMMWV_Crows_MK19_NATO_T",  // HMMWV CROWS MK19
+			"CUP_B_HMMWV_M2_GPK_NATO_T",  // HMMWV M115 M2
+			"CUP_B_HMMWV_M2_NATO_T",  // HMMWV M2
+			"CUP_B_HMMWV_MK19_NATO_T",  // HMMWV MK19
+			"CUP_B_HMMWV_SOV_M2_NATO_T",  // HMMWV SOV (M2)
+			"CUP_B_HMMWV_SOV_NATO_T",  // HMMWV SOV (Mk19)
+			"CUP_B_HMMWV_TOW_NATO_T",  // HMMWV TOW
+			"CUP_B_HMMWV_Transport_NATO_T",  // HMMWV Transport
+			"CUP_B_HMMWV_Terminal_NATO_T",  // HMMWV UAV Terminal
+			"CUP_B_M1151_M2_NATO_T",  // M1151 (M2)
+			"CUP_B_M1151_Deploy_NATO_T",  // M1151 (M2) Deployment
+			"CUP_B_M1151_Mk19_NATO_T",  // M1151 (Mk19)
+			"CUP_B_M1151_NATO_T",  // M1151 (Unarmed)
+			"CUP_B_M1152_NATO_T",  // M1152 EVC
+			"CUP_B_M1165_GMV_NATO_T",  // M1165 GMV (M134)
+			"CUP_B_M1167_NATO_T",  // M1167 (TOW-2)
+			"CUP_B_HMMWV_UNARMED_USA",  // HMMWV (Unarmed)
+			"CUP_B_HMMWV_Ambulance_USA",  // HMMWV Ambulance
+			"CUP_B_HMMWV_Crows_M2_USA",  // HMMWV CROWS M2
+			"CUP_B_HMMWV_Crows_MK19_USA",  // HMMWV CROWS MK19
+			"CUP_B_HMMWV_M2_GPK_USA",  // HMMWV M115 M2
+			"CUP_B_HMMWV_M2_USA",  // HMMWV M2
+			"CUP_B_HMMWV_MK19_USA",  // HMMWV MK19
+			"CUP_B_HMMWV_SOV_M2_USA",  // HMMWV SOV (M2)
+			"CUP_B_HMMWV_SOV_USA",  // HMMWV SOV (Mk19)
+			"CUP_B_HMMWV_TOW_USA",  // HMMWV TOW
+			"CUP_B_HMMWV_Transport_USA",  // HMMWV Transport
+			"CUP_B_HMMWV_Terminal_USA",  // HMMWV UAV Terminal
+			"CUP_B_M1151_M2_USA",  // M1151 (M2)
+			"CUP_B_M1151_Deploy_USA",  // M1151 (M2) Deployment
+			"CUP_B_M1151_Mk19_USA",  // M1151 (Mk19)
+			"CUP_B_M1151_USA",  // M1151 (Unarmed)
+			"CUP_B_M1152_USA",  // M1152 EVC
+			"CUP_B_M1165_GMV_USA",  // M1165 GMV (M134)
+			"CUP_B_M1167_USA",  // M1167 (TOW-2)
+			"CUP_B_HMMWV_UNARMED_USMC",  // HMMWV (Unarmed)
+			"CUP_B_HMMWV_Ambulance_USMC",  // HMMWV Ambulance
+			"CUP_B_HMMWV_M2_USMC",  // HMMWV M2
+			"CUP_B_HMMWV_M1114_USMC",  // HMMWV M240
+			"CUP_B_HMMWV_MK19_USMC",  // HMMWV MK19
+			"CUP_B_HMMWV_TOW_USMC",  // HMMWV TOW
+			"CUP_B_M1151_M2_USMC",  // M1151 (M2)
+			"CUP_B_M1151_Deploy_USMC",  // M1151 (M2) Deployment
+			"CUP_B_M1151_Mk19_USMC",  // M1151 (Mk19)
+			"CUP_B_M1151_USMC",  // M1151 (Unarmed)
+			"CUP_B_M1152_USMC",  // M1152 EVC
+			"CUP_B_M1165_GMV_USMC",  // M1165 GMV (M134)
+			"CUP_B_M1167_USMC",  // M1167 (TOW-2)
+			"Exile_car_HMMWV_M134_Green",  // HMMWV (M134)
+			"Exile_car_HMMWV_M134_Desert",  // HMMWV (M134)
+			"Exile_car_HMMWV_M2_Desert",  // HMMWV (M2)
+			"Exile_car_HMMWV_M2_Green",  // HMMWV (M2)
+			"Exile_car_HMMWV_MEV_Desert",  // HMMWV (MEV)
+			"Exile_car_HMMWV_MEV_Green",  // HMMWV (MEV)
+			"Exile_car_HMMWV_UNA_Desert",  // HMMWV (Unarmed)
+			"Exile_car_HMMWV_UNA_Green",  // HMMWV (Unarmed)
+			"HMMWV_UNA",  // HMMWV (Unarmed)
+			"HMMWV_UNA_des",  // HMMWV (Unarmed)
+			"HMMWV_M2_GPK_Base",  // HMMWV M1151 M2 Forest
+			"HMMWV_M2_GPK_1",  // HMMWV M1151 M2 Sand
+			"HMMWV_M134_des",  // HMMWV-M134
+			"HMMWV_M134",  // HMMWV-M134
+			"HMMWV_M2_des",  // HMMWV-M2
+			"HMMWV_M2",  // HMMWV-M2
+			"HMMWV_MEV_des",  // HMMWV-MEV
+			"HMMWV_MEV"  // HMMWV-MEV
+		];
+
+	IL_Supported_Quadbike = 
+		[
+			"Exile_Bike_OldBike",
+			"Exile_Bike_MountainBike",
+			"Exile_Bike_QuadBike_Black",
+			"Exile_Bike_QuadBike_Blue",
+			"Exile_Bike_QuadBike_Red",
+			"Exile_Bike_QuadBike_White",
+			"Exile_Bike_QuadBike_Nato",
+			"Exile_Bike_QuadBike_Csat",
+			"Exile_Bike_QuadBike_Fia",
+			"Exile_Bike_QuadBike_Guerilla01",
+			"Exile_Bike_QuadBike_Guerilla02",
+			"B_G_Quadbike_01_F",
+			"O_T_Quadbike_01_ghex_F",
+			"Exile_Car_Kart_BluKing",
+			"Exile_Car_Kart_RedStone",
+			"Exile_Car_Kart_Vrana",
+			"Exile_Car_Kart_Green",
+			"Exile_Car_Kart_Blue",
+			"Exile_Car_Kart_Orange",
+			"Exile_Car_Kart_White",
+			"Exile_Car_Kart_Yellow",
+			"Exile_Car_Kart_Black",
+			"C_Kart_01_Fuel_F",
+			"I_Quadbike_01_F",
+			"C_Quadbike_01_F",
+			"O_Quadbike_01_F",
+			"B_Quadbike_01_F"
+		];
+
+	IL_Supported_Supply_Crate = 
+		[
+			"B_CargoNet_01_ammo_F",  // cargo net [NATO]
+			"B_CargoNET_01_F",  // ???
+			"B_supplyCrate_F",  // supply box [NATO]
+			"C_supplyCrate_F",  // supply box [CTRG]
+			"CargoNet_01_box_F",  // cargo net (box)
+			"I_CargoNet_01_ammo_F",  // cargo net [AAF]
+			"I_CargoNET_01_F",  // ???
+			"I_supplyCrate_F",  // supply box [AAF]
+			"IG_supplyCrate_F",  // supply box [FIA]
+			"O_CargoNet_01_ammo_F",  // cargo net [CSAT]
+			"O_CargoNET_01_F",  // ???
+			"O_supplyCrate_F",  // supply box [CSAT]
+
+			// moved here because it's literally a large, netted supply crate
+			"Exile_Container_SupplyBox"  // supply box
+		];
+
+	IL_Supported_Veh_Ammo = 
+		[
+			"ASC_B_box",  // ???
+			"Box_East_AmmoVeh_F",  // vehicle ammo [CSAT]
+			"Box_IND_AmmoVeh_F",  // vehicle ammo [AAF]
+			"Box_NATO_AmmoVeh_F",  // vehicle ammo [NATO]
+			"Land_CargoBox_V1_F"  // small container
+		];
+
+	IL_Supported_Barrel = 
+		[
+			// "Land_BarrelEmpty_F",
+			// "Land_BarrelEmpty_grey_F",
+			// "Land_BarrelSand_F",
+			// "Land_BarrelSand_grey_F",
+			// "Land_BarrelTrash_F",
+			// "Land_BarrelTrash_grey_F",
+			// "Land_BarrelWater_F",
+			// "Land_BarrelWater_grey_F",
+			// "Land_MetalBarrel_F"
+		];//, "Land_MetalBarrel_empty_F", "MetalBarrel_burning_F"];
+
+	IL_Supported_Tank = 
+		[
+			// "Land_WaterBarrel_F",
+			// "Land_WaterTank_F"
+		];
+
+	IL_Supported_Rubberboat = 
+		[
+			"I_Boat_Transport_01_F",
+			"O_Boat_Transport_01_F",
+			"B_G_Boat_Transport_01_F",
+			"B_Boat_Transport_01_F",
+			"C_Rubberboat",
+			"O_Lifeboat",
+			"B_Lifeboat",
+			"Exile_Boat_RubberDuck_CSAT",
+			"Exile_Boat_RubberDuck_Digital",
+			"Exile_Boat_RubberDuck_Orange",
+			"Exile_Boat_RubberDuck_Blue",
+			"Exile_Boat_RubberDuck_Black",
+			"C_Scooter_Transport_01_F",
+			"Exile_Boat_MotorBoat_Police",
+			"Exile_Boat_MotorBoat_Orange",
+			"Exile_Boat_MotorBoat_White",
+			"I_C_Boat_Transport_02_F",
+			"C_Boat_Transport_02_F"
+		];
+
+	IL_Supported_SDV = 
+		[
+			"I_SDV_01_F",
+			"O_SDV_01_F",
+			"B_SDV_01_F",
+			"Exile_Boat_SDV_CSAT",
+			"Exile_Boat_SDV_Digital",
+			"Exile_Boat_SDV_Grey"
+		];
+
+	IL_Supported_Box_H1 = 
+		[
+			"Box_East_Wps_F",  // basic weapons [CSAT]
+			"Box_East_WpsLaunch_F",  // launchers [CSAT]
+			"Box_East_WpsSpecial_F",  // special weapons [CSAT]
+
+			"Box_IND_Wps_F",  // basic weapons [AAF]
+			"Box_IND_WpsLaunch_F",  // launchers [AAF]
+			"Box_IND_WpsSpecial_F",  // special weapons [AAF]
+
+			"Box_NATO_Wps_F",  // basic weapons [NATO]
+			"Box_NATO_WpsLaunch_F",  // launchers [NATO]
+			"Box_NATO_WpsSpecial_F"  // special weapons [NATO]
+		];
+
+	IL_Supported_Box_H2 = 
+		[
+			"Box_East_Ammo_F",  // basic ammo [CSAT]
+			"Box_East_AmmoOrd_F",  // explosives [CSAT] 
+			"Box_East_Grenades_F",  // grenades [CSAT]
+			"Box_East_Support_F",  // support [CSAT]
+
+			"Box_IND_Ammo_F",  // basic ammo [AAF]
+			"Box_IND_AmmoOrd_F",  // explosives [AAF]
+			"Box_IND_Grenades_F",  // grenades [AAF]
+			"Box_IND_Support_F",  // support [AAF]
+
+			"Box_NATO_Ammo_F",  // basic ammo [NATO]
+			"Box_NATO_AmmoOrd_F",  // explosives [NATO]
+			"Box_NATO_Grenades_F",  // grenades [NATO]
+			"Box_NATO_Support_F"  // support [NATO]
+		];
+
+	IL_Supported_Cargo20 = 
+		[
+			"Land_Cargo20_blue_F", 	// cargo container (medium, blue)
+			"Land_Cargo20_brick_red_F",  	// cargo container (medium, brick red)
+			"Land_Cargo20_cyan_F",  	// cargo container (medium, cyan)
+			"Land_Cargo20_grey_F",  	// cargo container (medium, grey)
+			"Land_Cargo20_light_blue_F",  	// cargo container (medium, light blue)
+			"Land_Cargo20_light_green_F",  	// cargo container (medium, light green)
+			"Land_Cargo20_military_green_F",  	// cargo container (medium, military green)
+			"Land_Cargo20_orange_F",  	// cargo container (medium, orange)
+			"Land_Cargo20_red_F",  	// cargo container (medium, red)
+			"Land_Cargo20_sand_F",   	// small container sand
+			"Land_Cargo20_white_F",   	// cargo container (medium, white)
+			"Land_Cargo20_yellow_F"  	// cargo container (medium, yellow)
+		];
+
 	//TODO
 	//IL_Supported_Backpack = ["B_AssaultPack_blk", "B_AssaultPack_cbr", "B_AssaultPack_dgtl", "B_AssaultPack_khk", "B_AssaultPack_mcamo", "B_AssaultPack_ocamo", "B_AssaultPack_rgr", "B_AssaultPack_sgg", "B_AssaultPackG", "B_Bergen_blk", "B_Bergen_mcamo", "B_Bergen_rgr", "B_Bergen_sgg", "B_BergenC_blu", "B_BergenC_grn", "B_BergenC_red", "B_BergenG", "B_Carryall_cbr", "B_Carryall_khk", "B_Carryall_mcamo", "B_Carryall_ocamo", "B_Carryall_oli", "B_Carryall_oucamo", "B_FieldPack_blk", "B_FieldPack_cbr", "B_FieldPack_khk", "B_FieldPack_ocamo", "B_FieldPack_oli", "B_FieldPack_oucamo", "B_HuntingBackpack", "B_Kitbag_cbr", "B_Kitbag_mcamo", "B_Kitbag_sgg", "B_OutdoorPack_blk", "B_OutdoorPack_blu", "B_OutdoorPack_tan", "B_TacticalPack_blk", "B_TacticalPack_mcamo", "B_TacticalPack_ocamo", "B_TacticalPack_oli", "B_TacticalPack_rgr", "C_Bergen_blu", "C_Bergen_grn", "C_Bergen_red", "G_AssaultPack", "G_Bergen"];
 	//IL_Supported_Backpack_Support = ["B_HMG_01_support_F", "B_HMG_01_support_high_F", "B_Mortar_01_support_F", "I_Mortar_01_support_F", "O_Mortar_01_support_F"];
@@ -164,6 +834,13 @@ if (isnil "IL_Variables") then
 	//IL_Supported_Parachute = ["B_Parachute"];
 
 	//IL_Supported_Backpack_All = IL_Supported_Backpack + IL_Supported_Backpack_Support + IL_Supported_Backpack_Weapon + IL_Supported_Backpack_Uav + IL_Supported_Parachute;
+
+	// Dingo
+	IL_Supported_Cargo_Dingo = IL_Supported_Box_H1 + IL_Supported_Box_H2;
+
+	// HMMWV
+	IL_Supported_Cargo_HMMWV = IL_Supported_Box_H1 + IL_Supported_Box_H2;
+
 	IL_Supported_Cargo_MH9 = IL_Supported_Supply_Crate + IL_Supported_Barrel; // + IL_Supported_Box_H1 + IL_Supported_Box_H2;// + IL_Supported_Backpack_All;
 	
 	IL_Supported_Cargo_Veh_Offroad = IL_Supported_Quadbike;
@@ -183,15 +860,15 @@ if (isnil "IL_Variables") then
 	IL_Supported_Cargo_HEMTT = IL_Supported_Cargo_Veh_HEMTT + IL_Supported_Cargo_NonVeh_HEMTT;
 	
 	IL_Supported_Cargo_Veh_TEMPEST = IL_Supported_Cargo_Veh_HEMTT;
-	IL_Supported_Cargo_NonVeh_TEMPEST = IL_Supported_Cargo_NonVeh_HEMTT;
+	IL_Supported_Cargo_NonVeh_TEMPEST = IL_Supported_Cargo_NonVeh_HEMTT + IL_Supported_Box_H1;
 	IL_Supported_Cargo_TEMPEST = IL_Supported_Cargo_Veh_TEMPEST + IL_Supported_Cargo_NonVeh_TEMPEST;
 	
-	IL_Supported_Cargo_Veh_Mohawk = IL_Supported_Quadbike + IL_Supported_Rubberboat + IL_Supported_SDV + IL_Supported_Hatchback + IL_Supported_UGV;
-	IL_Supported_Cargo_NonVeh_Mohawk = IL_Supported_Supply_Crate + IL_Supported_Veh_Ammo + IL_Supported_Barrel + IL_Supported_Tank;
+	IL_Supported_Cargo_Veh_Mohawk = IL_Supported_Quadbike + IL_Supported_Rubberboat + IL_Supported_SDV + IL_Supported_Hatchback + IL_Supported_UGV + IL_Supported_Box_H1;
+	IL_Supported_Cargo_NonVeh_Mohawk = IL_Supported_Supply_Crate + IL_Supported_Veh_Ammo + IL_Supported_Barrel + IL_Supported_Tank + IL_Supported_Box_H1;
 	IL_Supported_Cargo_Mohawk = IL_Supported_Cargo_Veh_Mohawk + IL_Supported_Cargo_NonVeh_Mohawk;
 	
 	IL_Supported_Cargo_Veh_CHINOOK = IL_Supported_Cargo_Veh_Mohawk;
-	IL_Supported_Cargo_NonVeh_CHINOOK = IL_Supported_Cargo_NonVeh_Mohawk;
+	IL_Supported_Cargo_NonVeh_CHINOOK = IL_Supported_Supply_Crate + IL_Supported_Veh_Ammo + IL_Supported_Barrel + IL_Supported_Tank + IL_Supported_Box_H1;
 	IL_Supported_Cargo_CHINOOK = IL_Supported_Cargo_Veh_CHINOOK + IL_Supported_Cargo_NonVeh_CHINOOK;
 	
 	IL_Supported_Cargo_Veh_C130J = IL_Supported_Cargo_Veh_HEMTT + IL_Supported_Strider + IL_Supported_Hunter + IL_Supported_Ifrit + IL_Supported_Hummvee + IL_Supported_HEMTT;
@@ -202,16 +879,6 @@ if (isnil "IL_Variables") then
 	IL_Supported_Cargo_NonVeh_C17 = IL_Supported_Cargo_NonVeh_C130J;
 	IL_Supported_Cargo_C17 = IL_Supported_Cargo_Veh_C17 + IL_Supported_Cargo_NonVeh_C17;
 };
-//	END VARIABLES
-
-	//Check if vehicle is supported or it is PLayer init
-// if !((_obj_main_type in (IL_Supported_Vehicles_All)) || (_obj_main == Player) || (isServer) || (isDedicated)) exitwith
-// {
-	// if (IL_DevMod) then
-	// {
-		// Player globalChat Format["IgiLoad. Object: ""%1"" is not supported.", _obj_main];
-	// };
-// };
 
 //	PROCEDURES AND FUNCTIONS
 if (isnil "IL_Procedures") then
@@ -241,6 +908,28 @@ if (isnil "IL_Procedures") then
 					_obj setMass (_obj getVariable "default_mass");
 				};
 			};
+
+		// Dingo
+		if (_obj_type in IL_Supported_Vehicles_Dingo) then
+		{
+			if ((isNil {_obj getVariable "box_num"}) || (_force)) then {_obj setVariable["box_num", 0, true];};
+			if ((isNil {_obj getVariable "slots_num"}) || (_force)) then {_obj setVariable["slots_num", IL_Num_Slots_Dingo, true];};
+			if ((isNil {_obj getVariable "can_load"}) || (_force)) then {_obj setVariable["can_load", true, true];};
+			if ((isNil {_obj getVariable "can_outside"}) || (_force)) then {_obj setVariable["can_outside", IL_Can_Outside, true];};
+			if ((isNil {_obj getVariable "zload"}) || (_force)) then {_obj setVariable["zload", -0.7, true];};  // how high the container animates to load
+			if ((isNil {_obj getVariable "load_offset"}) || (_force)) then {_obj setVariable["load_offset", 0.5, true];};  // how far the container animates to load
+		};
+
+		// HMMWV
+		if (_obj_type in IL_Supported_Vehicles_HMMWV) then
+		{
+			if ((isNil {_obj getVariable "box_num"}) || (_force)) then {_obj setVariable["box_num", 0, true];};
+			if ((isNil {_obj getVariable "slots_num"}) || (_force)) then {_obj setVariable["slots_num", IL_Num_Slots_HMMWV, true];};
+			if ((isNil {_obj getVariable "can_load"}) || (_force)) then {_obj setVariable["can_load", true, true];};
+			if ((isNil {_obj getVariable "can_outside"}) || (_force)) then {_obj setVariable["can_outside", IL_Can_Outside, true];};
+			if ((isNil {_obj getVariable "zload"}) || (_force)) then {_obj setVariable["zload", -1.2, true];};  // how high the container animates to load
+			if ((isNil {_obj getVariable "load_offset"}) || (_force)) then {_obj setVariable["load_offset", 0.5, true];};  // how far the container animates to load
+		};		
 		
 		if (_obj_type in IL_Supported_Vehicles_C130J) then
 		{
@@ -524,7 +1213,7 @@ if (isnil "IL_Procedures") then
 		};
 	};
 //	END IL_Init_Box
-	
+
 	IL_Server_AddScore =
 	{
 		if (IL_DevMod) then
@@ -562,7 +1251,7 @@ if (isnil "IL_Procedures") then
 		};
 	};
 //	END IL_Score
-	
+
 	IL_Server_SetDir =
 	{
 		if (IL_DevMod) then
@@ -589,7 +1278,7 @@ if (isnil "IL_Procedures") then
 
 	"IL_SetDir" addPublicVariableEventHandler IL_Server_SetDir;
 //	END publicVariable "IL_SetDir";
-		
+
 	IL_Rotate = 
 	{
 		private ["_obj", "_to", "_change"];
@@ -637,7 +1326,7 @@ if (isnil "IL_Procedures") then
 	
 	"IL_SetMass" addPublicVariableEventHandler IL_Server_SetMass;
 //	END publicVariable "IL_SetMass";
-	
+
 	IL_GetCargoMass =
 	{
 		private ["_v", "_cargo_mass"];
@@ -702,7 +1391,6 @@ if (isnil "IL_Procedures") then
 				};
 			};
 		};
-//		_v setMass (_v_def_mass + _cargo_mass);
 	};
 //	END IL_SetNewMass
 	
@@ -836,10 +1524,6 @@ if (isnil "IL_Procedures") then
 		};
 
 		_obj AttachTo [_veh, _to];
-			// if (_turn) then
-			// {
-				// [_obj, _veh, 90] call IL_Rotate;
-			// };
 	};
 //	END IL_Move_Attach
 
@@ -866,7 +1550,6 @@ if (isnil "IL_Procedures") then
 		{
 			Player globalChat Format ["IgiLoad ""%1"" in IL_Cargo_Para", IL_Script_Inst];
 		};
-		//player addScore IL_Unload_Score;
 		[Player, IL_Unload_Score] call IL_Score;
 		private ["_smoke", "_light", "_damage", "_smoke_type", "_chemlight_type", "_cargo_pos", "_last_attach_pos", "_dist", "_velocity", "_tmp"];
 		_cargo = _this select 0;
@@ -912,7 +1595,6 @@ if (isnil "IL_Procedures") then
 				sleep 0.2;
 			};
 		};
-	//	_chute = createVehicle ["NonSteerable_Parachute_F", position _cargo, [], 0, "CAN_COLLIDE"];
 		_chute = createVehicle ["B_Parachute_02_F", position _cargo, [], 0, "CAN_COLLIDE"];
 		_chute attachTo [_cargo, _cargo_pos];
 		_velocity = velocity _cargo;
@@ -960,6 +1642,7 @@ if (isnil "IL_Procedures") then
 			_light attachTo [_cargo,[0,0,2]];
 			detach _light;
 		};
+//	END IL_Cargo_Para
 		
 		_cargo setPosASL getPosASL _cargo;
 		
@@ -978,7 +1661,6 @@ if (isnil "IL_Procedures") then
 			};
 		};
 	};
-//	END IL_Cargo_Para
 
 	IL_Do_Load =
 	{
@@ -1003,6 +1685,33 @@ if (isnil "IL_Procedures") then
 		_counter = 0;
 		_done = false;
 		_turn = false;
+
+		// Dingo
+		if ((_obj_type in IL_Supported_Vehicles_Dingo) && (_doors == "B")) then
+		{
+			if (IL_DevMod) then
+			{
+				Player globalChat Format ["IgiLoad ""%1"". Do_load vehicle type: ""%2"" and doors: ""%3""", IL_Script_Inst, _obj_type, _doors];
+			};
+			_sdist = IL_SDistL;
+			_spoint = _v modelToWorld [0,-4.5,-1.6];
+			_box_num = _v getVariable "box_num";
+			_slot_num = _v getVariable "slots_num";
+		};
+
+		// HMMWV
+		if ((_obj_type in IL_Supported_Vehicles_HMMWV) && (_doors == "B")) then
+		{
+			if (IL_DevMod) then
+			{
+				Player globalChat Format ["IgiLoad ""%1"". Do_load vehicle type: ""%2"" and doors: ""%3""", IL_Script_Inst, _obj_type, _doors];
+			};
+			_sdist = IL_SDistL;
+			_spoint = _v modelToWorld [0,-4.5,-1.6];
+			_box_num = _v getVariable "box_num";
+			_slot_num = _v getVariable "slots_num";
+		};
+
 
 		if ((_obj_type in IL_Supported_Vehicles_VAN) && (_doors == "B")) then
 		{
@@ -1138,6 +1847,9 @@ if (isnil "IL_Procedures") then
 		if (count (_obj_lst) > 0) then
 		{
 			{
+				if( locked _x > 1 ) exitWith {
+					["Cannot load a locked vehicle",false] call SA_Hint;
+				};
 				if (IL_DevMod) then
 				{
 					Player globalChat Format ["IgiLoad ""%1"". Cargo: ""%2"" found.", IL_Script_Inst, _x];
@@ -1198,6 +1910,18 @@ if (isnil "IL_Procedures") then
 							{
 								sleep 1;
 							};
+						};
+
+						// Dingo
+						if ((_obj_type in IL_Supported_Vehicles_Dingo) && (_doors == "B")) then
+						{
+							[_v, _x, [_x_cargo_offset,-4.5,_zload], [_x_cargo_offset,_counter + 0.25 - _cargo_offset,_zload], 1, _turn] call IL_Move_Attach;
+						};
+
+						// HMMWV
+						if ((_obj_type in IL_Supported_Vehicles_HMMWV) && (_doors == "B")) then
+						{
+							[_v, _x, [_x_cargo_offset,-4.5,_zload], [_x_cargo_offset,_counter + 0.25 - _cargo_offset,_zload], 1, _turn] call IL_Move_Attach;
 						};
 
 						if ((_obj_type in IL_Supported_Vehicles_VAN) && (_doors == "B")) then
@@ -1393,10 +2117,6 @@ if (isnil "IL_Procedures") then
 						_zload = (_v getVariable "zload") + (_x getVariable "zload_cargo");
 						_cargo_offset = (_v getVariable "load_offset") + (_x getVariable "cargo_offset");
 						_damage = getDammage _x;
-						// if ((typeOf _x) == "Land_WaterTank_F") then
-						// {
-							// _turn = true;
-						// };
 						if ((typeOf _x) in IL_Supported_UGV) then
 						{
 							_x_cargo_offset = -0.4;
@@ -1407,6 +2127,19 @@ if (isnil "IL_Procedures") then
 						};
 
 						_obj_type = (typeOf _v);
+
+						// Dingo
+						if ((_obj_type in IL_Supported_Vehicles_Dingo) && (_doors == "B")) then
+						{
+							[_v, _x, [_x_cargo_offset,_counter + 0.25 - _cargo_offset,_zload], [_x_cargo_offset,-4.5,_zload], 1, _turn] call IL_Move_Attach;
+						};
+
+						// HMMWV
+						if ((_obj_type in IL_Supported_Vehicles_HMMWV) && (_doors == "B")) then
+						{
+							[_v, _x, [_x_cargo_offset,_counter + 0.25 - _cargo_offset,_zload], [_x_cargo_offset,-4.5,_zload], 1, _turn] call IL_Move_Attach;
+						};
+
 						if ((_obj_type in IL_Supported_Vehicles_VAN) && (_doors == "B")) then
 						{
 							[_v, _x, [_x_cargo_offset,_counter + 0.25 - _cargo_offset,_zload], [_x_cargo_offset,-4.5,_zload], 1, _turn] call IL_Move_Attach;
@@ -1506,6 +2239,7 @@ if (isnil "IL_Procedures") then
 						{
 							sleep 0.2;
 							detach _x;
+							_x enableSimulationGlobal true;  // Lyrae: wtf is this
 							_x setVelocity [0, 0, -0.2];
 						};
 
@@ -1662,6 +2396,7 @@ if (isnil "IL_Procedures") then
 				_x_offset = -8;
 			};
 		};
+//	END IL_GetOut
 		
 		_player allowDamage false;
 		sleep 0.2;
@@ -1678,12 +2413,6 @@ if (isnil "IL_Procedures") then
 		}
 		else
 		{
-			// _backpack = unitBackpack _player;
-			// if !((_backpack isKindOf "B_Parachute") || (isNull _backpack)) then
-			// {
-				// _backpack AttachTo [_player, [0,0.15,0.15], "Pelvis"];
-				// [_backpack, _player, 180] call IL_Rotate;
-			// };
 			_pos = ([_v, _dist_out_para, ((getDir _v) + 180 + _x_offset)] call BIS_fnc_relPos);
 			_pos = [_pos select 0, _pos select 1, ((getPosATL _v) select 2)];
 			_player setPosATL _pos;
@@ -1714,19 +2443,6 @@ if (isnil "IL_Procedures") then
 			};
 		};
 		_player allowDamage true;
-			// if !((_backpack isKindOf "B_Parachute") || (isNull _backpack)) then
-			// {
-				// while {(getPosATL _backpack) select 2 < 5} do
-				// {
-					// sleep 0.2;
-				// };
-				// _backpack AttachTo [_player, [0,0.15,-1.5], "Pelvis"];
-				// while {(getPosATL _backpack) select 2 < 1} do
-				// {
-					// sleep 0.2;
-				// };
-				// detach _backpack;
-			// };
 		
 		if (IL_DevMod) then
 		{
@@ -1737,12 +2453,105 @@ if (isnil "IL_Procedures") then
 			Player globalChat Format["IgiLoad ""%1"" IL_GetOut. Player ATL: ""%2""", IL_Script_Inst, _pos];
 		};
 	};
-//	END IL_GetOut
 };
 //	END PROCEDURES AND FUNCTIONS
 
 //	MAIN CODE
 _vsupported = false;
+
+// Dingo
+if (_obj_main_type in IL_Supported_Vehicles_Dingo) then
+{
+	if (IL_DevMod) then
+	{
+		Player globalChat Format["IgiLoad ""%1"" Vehicle is in IL_Supported_Vehicles_Dingo.", IL_Script_Inst];
+	};
+	_vsupported = true;
+	[_obj_main] call IL_Init_Veh;
+	
+	_obj_main addAction [
+	"<img image='IgiLoad\images\load.paa' /><t color=""#007f0e"">  Load cargo on Dingo</t>",
+	{
+		[_this select 0, IL_Supported_Cargo_Dingo] call IL_Do_Load;
+	},[],IL_Action_LU_Priority,true,true,"",
+	"(count(nearestObjects[ _target modelToWorld [0,-4.5,0], IL_Supported_Cargo_Dingo, IL_SDistL]) > 0) && (abs(speed _target) <= IL_LU_Speed) && ((IL_Can_Inside && (driver _target == _this)) || ((((_this in (nearestObjects[ _target modelToWorld [0,-4.5,0], [], IL_SDistL + IL_SDistL_Heli_offset]))) && (_target getVariable 'can_outside')))) && (_target getVariable 'box_num' > _target getVariable 'slots_num') && (_target getVariable 'can_load')"
+	];
+	_obj_main addAction [
+	"<img image='IgiLoad\images\unload.paa' /><t color=""#ff0000"">  Unload cargo from Dingo</t>",
+	{
+		[_this select 0] call IL_Do_Unload;
+	},[],IL_Action_LU_Priority,false,true,"",
+	"(_target getVariable 'box_num' < 0) && ((IL_Can_Inside && (driver _target == _this)) || (((_this in (nearestObjects[ _target modelToWorld [0,-4.5,0], [], IL_SDistL + IL_SDistL_Heli_offset])) && (_target getVariable 'can_outside')))) && (_target getVariable 'can_load') && (abs(speed _target) <= IL_LU_Speed)"
+	];
+	
+	_obj_main addAction [
+	"<t color=""#0000ff"">Enable loading from outside</t>",
+	{
+		(_this select 0) setVariable["can_outside", true, true];;
+	},[],IL_Action_S_Priority,false,true,"",
+	"((driver _target == _this) && !(_target getVariable 'can_outside') && IL_Can_Outside)"
+	];
+	
+	_obj_main addAction [
+	"<t color=""#0000ff"">Disable loading from outside</t>",
+	{
+		(_this select 0) setVariable["can_outside", false, true];;
+	},[],IL_Action_S_Priority,false,true,"",
+	"((driver _target == _this) && (_target getVariable 'can_outside') && IL_Can_Outside)"
+	];
+};
+
+// HMMWV
+if (_obj_main_type in IL_Supported_Vehicles_HMMWV) then
+{
+	if (IL_DevMod) then
+	{
+		Player globalChat Format["IgiLoad ""%1"" Vehicle is in IL_Supported_Vehicles_HMMWV.", IL_Script_Inst];
+	};
+	_vsupported = true;
+	[_obj_main] call IL_Init_Veh;
+	
+	_obj_main addAction [
+	"<img image='IgiLoad\images\load.paa' /><t color=""#007f0e"">  Load cargo on HMMWV</t>",
+	{
+		[_this select 0, IL_Supported_Cargo_HMMWV] call IL_Do_Load;
+	},[],IL_Action_LU_Priority,true,true,"",
+	"(count(nearestObjects[ _target modelToWorld [0,-4.5,0], IL_Supported_Cargo_HMMWV, IL_SDistL]) > 0) && (abs(speed _target) <= IL_LU_Speed) && ((IL_Can_Inside && (driver _target == _this)) || ((((_this in (nearestObjects[ _target modelToWorld [0,-4.5,0], [], IL_SDistL + IL_SDistL_Heli_offset]))) && (_target getVariable 'can_outside')))) && (_target getVariable 'box_num' > _target getVariable 'slots_num') && (_target getVariable 'can_load')"
+	];
+	
+//	_obj_main addAction [
+//	"<img image='IgiLoad\images\load.paa' /><t color=""#007f0e"">  Load vehicle on VAN</t>",
+//	{
+//		[_this select 0, IL_Supported_Cargo_Veh_VAN] call IL_Do_Load;
+//	},[],IL_Action_LU_Priority,true,true,"",
+//	"(count(nearestObjects[ _target modelToWorld [0,-4.5,0], IL_Supported_Cargo_Veh_VAN, IL_SDistL]) > 0) && (abs(speed _target) <= IL_LU_Speed) && ((IL_Can_Inside && (driver _target == _this)) || ((((_this in (nearestObjects[ _target modelToWorld [0,-4.5,0], [], IL_SDistL + IL_SDistL_Heli_offset]))) && (_target getVariable 'can_outside')))) && (_target getVariable 'box_num' > _target getVariable 'slots_num') && (_target getVariable 'can_load')"
+//	];
+	
+	_obj_main addAction [
+	"<img image='IgiLoad\images\unload.paa' /><t color=""#ff0000"">  Unload cargo from HMMWV</t>",
+	{
+		[_this select 0] call IL_Do_Unload;
+	},[],IL_Action_LU_Priority,false,true,"",
+	"(_target getVariable 'box_num' < 0) && ((IL_Can_Inside && (driver _target == _this)) || (((_this in (nearestObjects[ _target modelToWorld [0,-4.5,0], [], IL_SDistL + IL_SDistL_Heli_offset])) && (_target getVariable 'can_outside')))) && (_target getVariable 'can_load') && (abs(speed _target) <= IL_LU_Speed)"
+	];
+	
+	_obj_main addAction [
+	"<t color=""#0000ff"">Enable loading from outside</t>",
+	{
+		(_this select 0) setVariable["can_outside", true, true];;
+	},[],IL_Action_S_Priority,false,true,"",
+	"((driver _target == _this) && !(_target getVariable 'can_outside') && IL_Can_Outside)"
+	];
+	
+	_obj_main addAction [
+	"<t color=""#0000ff"">Disable loading from outside</t>",
+	{
+		(_this select 0) setVariable["can_outside", false, true];;
+	},[],IL_Action_S_Priority,false,true,"",
+	"((driver _target == _this) && (_target getVariable 'can_outside') && IL_Can_Outside)"
+	];
+};
+
 if (_obj_main_type in IL_Supported_Vehicles_MOHAWK) then
 {
 	if (IL_DevMod) then
@@ -2257,7 +3066,6 @@ if (_obj_main_type in IL_Supported_Vehicles_C130J) then
 		},[],IL_Action_LU_Priority,false,true,"",
 		"('cargo' in (assignedVehicleRole _this)) && (vehicle _this == _target) && (((getPosATL _target) select 2) >= IL_Para_Drop_ATL) && (_target animationPhase 'ramp_bottom' > 0.9) && (_target getVariable 'usable_ramp')"
 		];
-//		"('cargo' in (assignedVehicleRole _this)) && (vehicle _this == _target) && (((getPosATL _target) select 2) >= IL_Para_Jump_ATL) && (_target animationPhase 'ramp_bottom' < 0.1) && (_target getVariable 'usable_ramp')"
 	};
 	
 	_obj_main addAction [
@@ -2302,22 +3110,6 @@ if (_obj_main_type in IL_Supported_Vehicles_C130J) then
 	},[],IL_Action_LU_Priority,false,true,"",
 	"(_target getVariable 'box_num' < 0) && ((driver _target == _this) || (('Turret' in (assignedVehicleRole _this)) && (vehicle _this == _target) && (_target getVariable 'can_copilot'))) && (_target getVariable 'can_load') && (((getPosATL _target) select 2) >= IL_Para_Drop_ATL) && (_target animationPhase 'ramp_bottom' == 1) && (_target animationPhase 'ramp_top' == 1)"
 	];
-	
-	// _obj_main addAction [
-	// "<t color=""#0000ff"">Open lower part of ramp in C-130J</t>",
-	// {
-		// _this select 0 animate ['ramp_bottom', 1];
-	// },[],IL_Action_O_Priority,false,true,"",
-	// "((driver _target == _this) || (('Turret' in (assignedVehicleRole _this)) && (vehicle _this == _target) && (_target getVariable 'can_copilot')) || ((_this in (nearestObjects[ _target modelToWorld [0,-9,-5.4], [], IL_SDistL + IL_SDistL_Heli_offset])) && (_target getVariable 'can_outside'))) && (_target animationPhase 'ramp_bottom' == 0) && (_target getVariable 'can_load')"
-	// ];
-
-	// _obj_main addAction [
-	// "<t color=""#0000ff"">Close lower part of ramp in C-130J</t>",
-	// {
-		// _this select 0 animate ['ramp_bottom', 0];
-	// },[],IL_Action_O_Priority,false,true,"",
-	// "((driver _target == _this) || (('Turret' in (assignedVehicleRole _this)) && (vehicle _this == _target) && (_target getVariable 'can_copilot')) || ((_this in (nearestObjects[ _target modelToWorld [0,-9,-5.4], [], IL_SDistL + IL_SDistL_Heli_offset])) && (_target getVariable 'can_outside'))) && (_target animationPhase 'ramp_bottom' == 1) && (_target getVariable 'can_load')"
-	// ];
 	
 	_obj_main addAction [
 	"<t color=""#0000ff"">Enable loading for Co-Pilot</t>",
@@ -2886,5 +3678,5 @@ if (!(_vsupported) && (IL_DevMod)) then
 if (IL_DevMod) then
 {
 	Player globalChat Format["IgiLoad ""%1"" END.", IL_Script_Inst];
-};	
+};
 //	EOF
